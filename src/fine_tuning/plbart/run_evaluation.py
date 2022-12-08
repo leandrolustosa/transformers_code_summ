@@ -9,18 +9,22 @@ from src.utils.utils import read_corpus_csv
 
 if __name__ == '__main__':
 
-    lang = 'java'
-    # lang = 'python'
+    # lang = 'java'
+    lang = 'python'
 
-    corpus_name = 'huetal'
+    # corpus_name = 'huetal'
     # corpus_name = 'codexglue'
-    # corpus_name = 'wanetal'
+    corpus_name = 'wanetal'
 
-    eval_measure_opt = 'loss'
+    # eval_measure_opt = 'loss'
     # eval_measure_opt = 'bleu'
+    # eval_measure_opt = 'rougel'
+    eval_measure_opt = 'meteor'
 
-    # preproc_config = 'none'
-    preproc_config = 'camelsnakecase'
+    preproc_config = 'none'
+
+    if lang == 'java':
+        preproc_config = 'camelsnakecase'
 
     desc_file_name = f'plbart_{preproc_config}_{eval_measure_opt}_ft.txt'
 
@@ -50,7 +54,7 @@ if __name__ == '__main__':
     min_desc_len = 4
     max_desc_len = 20
 
-    size_threshold = 20
+    size_threshold = -1
 
     _, _, test_data = read_corpus_csv(test_file_path=test_file_path, sample_size=size_threshold)
 
@@ -58,7 +62,7 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    print('\nDevice:', device)
+    print(f'\nDevice: {device}')
 
     tokenizer = PLBartTokenizer.from_pretrained(model_name, src_lang=lang, tgt_lang='en_XX')
 
@@ -68,11 +72,11 @@ if __name__ == '__main__':
 
     model.load_state_dict(torch.load(model_path))
 
-    print('\nModel:', model_name)
-    print('\nCorpus:', corpus_name)
+    print(f'\nModel: {model_name} - {eval_measure_opt}')
+    print(f'\nCorpus: {corpus_name}')
 
-    print('\n  Test set:', len(test_codes))
-    print('    Code:', test_codes[0], '\n')
+    print(f'\n  Test set: {len(test_codes)}')
+    print(f'    Code: {test_codes[0]} \n')
 
     total_examples = len(test_codes)
 
@@ -80,7 +84,7 @@ if __name__ == '__main__':
 
     generated_descriptions = []
 
-    with tqdm(total=total_examples, file=sys.stdout, desc='  Generating summaries') as pbar:
+    with tqdm(total=total_examples, file=sys.stdout, colour='green', desc='  Generating summaries') as pbar:
 
         for code in test_codes:
 

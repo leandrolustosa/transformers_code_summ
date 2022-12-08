@@ -326,7 +326,7 @@ def load_corpus(base_path, file_input_path, file_target_path):
     with open(base_path + '/' + file_target_path, encoding='utf-8') as file_target:
         target_lines = file_target.readlines()
 
-    inputs = [input.replace('\n', '') for input in input_lines]
+    inputs = [input_.replace('\n', '') for input_ in input_lines]
     targets = [target.replace('\n', '') for target in target_lines]
 
     return inputs, targets

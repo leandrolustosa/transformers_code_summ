@@ -1,8 +1,10 @@
 import torch
 import torch.nn as nn
+import sys
 
 from model import Seq2Seq
 from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
+from tqdm import tqdm
 
 
 def inference(data, model, tokenizer, device='cpu'):
@@ -79,3 +81,17 @@ def convert_examples_to_features(examples, tokenizer, stage=None):
         target_mask += [0] * padding_length
         features.append(InputFeatures(example_index, source_ids, target_ids, source_mask, target_mask))
     return features
+
+
+def generate_descriptions(test_codes, tokenizer, model, max_code_len, device):
+    total_examples = len(test_codes)
+    generated_descriptions = []
+    with tqdm(total=total_examples, file=sys.stdout, colour='green', desc='  Generating summaries') as pbar:
+        for i in range(total_examples):
+            code = test_codes[i]
+            example = [Example(source=code, target=None)]
+            features_code = get_features(example, tokenizer, max_code_len)
+            generated_desc, length = inference(features_code, model, tokenizer, device=device)
+            generated_descriptions.append(generated_desc[0])
+            pbar.update(1)
+    return generated_descriptions

@@ -163,7 +163,7 @@ def get_tokens_code(code, threshold=5):
     tokens_code = [value for _, value, _, _, _ in tokens_generator if value != 'utf-8']
     tokens_code = camel_case_split(tokens_code)
     replace_abbreviations(tokens_code)
-    tokens_code = get_tokens_from_infer_spaces(tokens_code)
+    #tokens_code = get_tokens_from_infer_spaces(tokens_code)
 
     tfidf = TfidfVectorizer(stop_words='english')
     tfidf.fit_transform([" ".join(tokens_code)])

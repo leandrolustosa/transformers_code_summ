@@ -45,7 +45,7 @@ title_csv_models = ['CodeBERT',
 preprocessing_types = ['none', 'camelsnakecase']
 
 similarity_folder_path = f'../../resources/corpora/{language}/similarity'
-summarizations_folder_path = f'../../resources/related_works/descriptions/{language}'
+summarizations_folder_path = f'../../resources/corpora/{language}/summarizations'
 
 limit_rows = -1
 
@@ -391,7 +391,7 @@ if __name__ == '__main__':
         summarizations = define_global_variables(corpus)
 
         summarizations = read_and_preprocessing_summarizations(corpus, summarizations)
-        #summarizations = read_summarizations(corpus, summarizations)
+        # summarizations = read_summarizations(corpus, summarizations)
 
         #calculate_similarity(corpus, summarizations, get_sbert_cosine_sim, 'by_sbert_cosine')
         calculate_similarity(corpus, summarizations, get_jaccard_sim, 'by_jaccard', print_devpd=False, print_latex=True)

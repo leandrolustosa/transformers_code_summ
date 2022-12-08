@@ -11,7 +11,7 @@ def compute_rouge(reference, candidate, max_len, use_stemming=True, max_ngram=2)
     evaluator = Rouge(metrics=['rouge-n', 'rouge-l'], max_n=max_ngram,
                       limit_length=True, length_limit=max_len,
                       length_limit_type='words', apply_avg=True,
-                      apply_best=False, alpha=0.5, weight_factor=1.2,
+                      apply_best=False, alpha=0.5, weight_factor=1.0,
                       stemming=use_stemming)
     rouge_scores = evaluator.get_scores(candidate, reference)
     return rouge_scores

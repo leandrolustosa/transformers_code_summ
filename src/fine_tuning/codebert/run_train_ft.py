@@ -2,12 +2,13 @@ import codebert_utils
 import torch
 import torch.nn as nn
 import os
+import wandb
 
 from src.utils.utils import read_corpus_csv
 from transformers import RobertaConfig, RobertaModel, RobertaTokenizer, get_linear_schedule_with_warmup
 from model import Seq2Seq
 from torch.optim import AdamW
-from codebert_helper import train, evaluate_loss, evaluate_bleu
+from codebert_helper import train_model
 
 
 if __name__ == '__main__':
@@ -20,15 +21,24 @@ if __name__ == '__main__':
     corpus_name = 'wanetal'
 
     # eval_measure_opt = 'loss'
-    eval_measure_opt = 'bleu'
+    # eval_measure_opt = 'bleu'
+    eval_measure_opt = 'rougel'
+    # eval_measure_opt = 'meteor'
 
     preproc_config = 'none'
-    # preproc_config = 'camelsnakecase'
 
-    size_threshold = 100000
+    if lang == 'java':
+        preproc_config = 'camelsnakecase'
 
-    num_epochs = 5
-    # num_epochs = 20
+    project_name = f'code_summ_ft_{lang}_{corpus_name}'
+
+    size_threshold = 60000
+
+    num_epochs = 15
+
+    save_model_state = False
+
+    pretrained_model_file = '../../../resources/related_work/models/codebert/pytorch_model.bin'
 
     model_dir = f'../../../resources/fine_tuning/models/codebert/{eval_measure_opt}/{lang}/{corpus_name}'
 
@@ -41,24 +51,24 @@ if __name__ == '__main__':
 
     print(f'\nCorpus: {lang} - {corpus_name} - {eval_measure_opt}')
 
-    print('\nTrain data:', len(train_data[0]))
-    print('  Example code:', train_data[0][0])
-    print('  Example Desc:', train_data[1][0])
+    print(f'\nTrain data: {len(train_data[0])}')
+    print(f'  Example code: {train_data[0][0]}')
+    print(f'  Example Desc: {train_data[1][0]}')
 
-    print('\nValid data:', len(valid_data[0]))
-    print('  Example code:', valid_data[0][0])
-    print('  Example Desc:', valid_data[1][0])
+    print(f'\nValid data: {len(valid_data[0])}')
+    print(f'  Example code: {valid_data[0][0]}')
+    print(f'  Example Desc: {valid_data[1][0]}')
 
     os.makedirs(model_dir, exist_ok=True)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    print('\n\nUsing', device)
+    print(f'\n\nDevice: {device}')
 
     max_code_len = 300
     max_desc_len = 20
 
-    batch_size = 32
+    batch_size = 16
     num_beams = 5
 
     weight_decay = 0.01
@@ -81,6 +91,8 @@ if __name__ == '__main__':
 
     model = Seq2Seq(encoder=encoder, decoder=decoder, config=config, beam_size=num_beams,
                     max_length=max_desc_len, sos_id=tokenizer.cls_token_id, eos_id=tokenizer.sep_token_id)
+
+    model.load_state_dict(torch.load(pretrained_model_file, map_location=torch.device(device), ), strict=False)
 
     model = model.to(device)
 
@@ -106,67 +118,29 @@ if __name__ == '__main__':
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=int(t_total * 0.1),
                                                 num_training_steps=t_total)
 
-    print('\nTraining')
+    print(f'\nTraining -- {batch_size}')
 
     val_code = valid_data[0][0]
 
-    best_eval_measure = None
+    wandb.login(key='2122de51cbbe8b9eeac749c5ccb5945dc9453b67')
 
-    if eval_measure_opt == 'bleu':
-        best_eval_measure = 0
-    else:
-        best_eval_measure = 1e10
+    with wandb.init(project=project_name) as run:
 
-    best_epoch = -1
+        run.name = f'ft_codebert_{preproc_config}_{eval_measure_opt}'
 
-    for epoch in range(num_epochs):
-
-        print('\n  Epoch: {} / {}'.format(epoch + 1, num_epochs))
-
-        val_desc = codebert_utils.translate_code(val_code, model, tokenizer, max_code_len, max_desc_len,
-                                                 device, stage='test')
-
-        print('\n    Val desc:', val_desc, '\n')
-
-        train_loss = train(train_dataloader, model, optimizer, scheduler, grad_accum_steps, device)
-
-        save_best_model = None
-        eval_measure = None
-
-        if eval_measure_opt == 'bleu':
-            eval_bleu = evaluate_bleu(valid_data, model, tokenizer, max_code_len, max_desc_len,
-                                      codebert_utils.translate_code, device)
-            save_best_model = eval_bleu > best_eval_measure
-            eval_measure = eval_bleu
-        else:
-            eval_loss = evaluate_loss(val_dataloader, model, device)
-            save_best_model = eval_loss < best_eval_measure
-            eval_measure = eval_loss
-
-        # if (epoch + 1) % 2 == 0:
-        #     last_ck_dir = os.path.join(model_dir, 'checkpoint-last')
-        #     if not os.path.exists(last_ck_dir):
-        #         os.makedirs(last_ck_dir)
-        #     last_ck_file = os.path.join(last_ck_dir, 'model.pt')
-        #     torch.save({'epoch': epoch, 'model_state_dict': model.state_dict(),
-        #                 'optimizer_state_dict': optimizer.state_dict(), 'loss': train_loss}, last_ck_file)
-
-        if save_best_model:
-            print('\n    Saving best model ...')
-            best_eval_measure = eval_measure
-            best_epoch = epoch
-            output_dir = os.path.join(model_dir, 'best_model')
-            os.makedirs(output_dir, exist_ok=True)
-            output_model_file = os.path.join(output_dir, 'codebert.bin')
-            torch.save(model.state_dict(), output_model_file)
-
-        if (epoch - best_epoch) >= 5:
-            print('\n    Stopping training ...')
-            break
+        train_model(train_dataloader, val_code, valid_data, val_dataloader, tokenizer, model, optimizer,
+                    scheduler, num_epochs, max_code_len, max_desc_len, grad_accum_steps, eval_measure_opt,
+                    model_dir, save_model_state, device)
 
     print('\n\nTraining completed')
 
     val_desc = codebert_utils.translate_code(val_code, model, tokenizer, max_code_len, max_desc_len,
                                              device, stage='test')
 
-    print('\n\nVal desc:', val_desc, '\n')
+    print(f'\n\nVal desc: {val_desc}\n')
+
+    import time
+
+    time.sleep(2 * 60)
+
+    os.system('shutdown -h now')

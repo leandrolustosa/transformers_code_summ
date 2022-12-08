@@ -1,9 +1,10 @@
 import torch
 import os
+import wandb
 
 from src.utils.utils import read_corpus_csv
 from codet5_utils import build_data
-from codet5_helper import train, evaluate_loss, evaluate_bleu, translate_code
+from codet5_helper import run_train, translate_code
 from transformers import RobertaTokenizer, T5ForConditionalGeneration
 from torch.utils.data import DataLoader, RandomSampler
 from transformers import get_linear_schedule_with_warmup
@@ -22,14 +23,21 @@ if __name__ == '__main__':
     # model_name = 'small'
     model_name = 'base'
 
-    eval_measure_opt = 'loss'
+    # eval_measure_opt = 'loss'
     # eval_measure_opt = 'bleu'
+    eval_measure_opt = 'rougel'
 
     preproc_config = 'none'
-    # preproc_config = 'camelsnakecase'
 
-    size_threshold = 10
-    num_epochs = 5
+    if lang == 'java':
+        preproc_config = 'camelsnakecase'
+
+    project_name = f'code_summ_ft_{lang}_{corpus_name}'
+
+    size_threshold = 60000
+    num_epochs = 15
+
+    save_model_state = False
 
     model_dir = f'../../../resources/fine_tuning/models/codet5/{model_name}/{eval_measure_opt}/{lang}/' \
                 f'{corpus_name}'
@@ -44,6 +52,10 @@ if __name__ == '__main__':
     max_desc_len = 20
 
     batch_size = 32
+
+    if model_name == 'base':
+        batch_size = 16
+
     num_beams = 5
 
     weight_decay = 0.01
@@ -67,17 +79,17 @@ if __name__ == '__main__':
 
     os.makedirs(model_dir, exist_ok=True)
 
-    print('\nModel:', model_name)
+    print(f'\nModel: {model_name} - {batch_size}')
 
     print(f'\nCorpus: {lang} - {corpus_name} - {eval_measure_opt}')
 
-    print('\n  Train data:', len(train_data[0]))
-    print('    Example code:', train_data[0][0])
-    print('    Example Desc:', train_data[1][0])
+    print(f'\n  Train data: {len(train_data[0])}')
+    print(f'    Example code: {train_data[0][0]}')
+    print(f'    Example Desc: {train_data[1][0]}')
 
-    print('\n  Valid data:', len(valid_data[0]))
-    print('    Example code:', valid_data[0][0])
-    print('    Example Desc:', valid_data[1][0])
+    print(f'\n  Valid data: {len(valid_data[0])}')
+    print(f'    Example code: {valid_data[0][0]}')
+    print(f'    Example Desc: {valid_data[1][0]}')
 
     tokenizer = RobertaTokenizer.from_pretrained(tokenizer_path)
 
@@ -92,20 +104,18 @@ if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    print('\nUsing', device)
+    print(f'\nDevice: {device}')
 
     model = model.to(device)
 
-    print('\nModel:', model)
+    print(f'\nModel: {model}')
 
     no_decay = ['bias', 'LayerNorm.weight']
 
     optimizer_grouped_parameters = [
-        {'params': [p for n, p in model.named_parameters()
-                    if not any(nd in n for nd in no_decay)],
+        {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
          'weight_decay': weight_decay},
-        {'params': [p for n, p in model.named_parameters()
-                    if any(nd in n for nd in no_decay)],
+        {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
          'weight_decay': 0.0}
     ]
 
@@ -120,59 +130,15 @@ if __name__ == '__main__':
 
     val_code = valid_data[0][0]
 
-    best_eval_measure = None
+    wandb.login(key='2122de51cbbe8b9eeac749c5ccb5945dc9453b67')
 
-    if eval_measure_opt == 'bleu':
-        best_eval_measure = 0
-    else:
-        best_eval_measure = 1e10
+    with wandb.init(project=project_name) as run:
 
-    best_epoch = -1
+        run.name = f'ft_codet5_{model_name}_{preproc_config}_{eval_measure_opt}'
 
-    for epoch in range(int(num_epochs)):
-
-        print('\n  Epoch: {} / {}\n'.format(epoch+1, num_epochs))
-
-        val_desc = translate_code(val_code, model, tokenizer, max_code_len, max_desc_len, num_beams, device)
-
-        print('    Val desc:', val_desc, '\n')
-
-        train_loss = train(train_dataloader, model, optimizer, scheduler, tokenizer, grad_accum_steps, device)
-
-        save_best_model = None
-        eval_measure = None
-
-        if eval_measure_opt == 'bleu':
-            eval_bleu = evaluate_bleu(valid_data, model, tokenizer, max_code_len, max_desc_len, num_beams, device)
-            save_best_model = eval_bleu > best_eval_measure
-            eval_measure = eval_bleu
-        else:
-            eval_loss = evaluate_loss(valid_data, model, tokenizer, max_code_len, max_desc_len, batch_size,
-                                      device)
-            save_best_model = eval_loss < best_eval_measure
-            eval_measure = eval_loss
-
-        # if (epoch + 1) % 2 == 0:
-        #     last_ck_dir = os.path.join(model_dir, 'checkpoint-last')
-        #     if not os.path.exists(last_ck_dir):
-        #         os.makedirs(last_ck_dir)
-        #     last_ck_file = os.path.join(last_ck_dir, model_name + '.pt')
-        #     torch.save({'epoch': epoch, 'model_state_dict': model.state_dict(),
-        #                 'optimizer_state_dict': optimizer.state_dict(), 'loss': train_loss}, last_ck_file)
-
-        if save_best_model:
-            print('\n    Saving best model')
-            best_eval_measure = eval_measure
-            best_epoch = epoch
-            output_dir = os.path.join(model_dir, 'best_model')
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
-            output_model_file = os.path.join(output_dir, 'codet5_' + model_name + '.bin')
-            torch.save(model.state_dict(), output_model_file)
-
-        if (epoch - best_epoch) >= 5:
-            print('\n    Stopping training ...')
-            break
+        run_train(train_dataloader, val_code, valid_data, tokenizer, model, model_name, optimizer, scheduler,
+                  num_epochs, max_code_len, max_desc_len, num_beams, batch_size, grad_accum_steps,
+                  eval_measure_opt, model_dir, save_model_state, device)
 
     print('\n\nTraining completed')
 

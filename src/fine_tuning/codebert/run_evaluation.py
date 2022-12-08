@@ -16,14 +16,18 @@ if __name__ == '__main__':
     lang = 'python'
 
     # corpus_name = 'huetal'
-    corpus_name = 'codexglue'
-    # corpus_name = 'wanetal'
+    # corpus_name = 'codexglue'
+    corpus_name = 'wanetal'
 
-    eval_measure_opt = 'loss'
+    # eval_measure_opt = 'loss'
     # eval_measure_opt = 'bleu'
+    eval_measure_opt = 'rougel'
+    # eval_measure_opt = 'meteor'
 
     preproc_config = 'none'
-    # preproc_config = 'camelsnakecase'
+
+    if lang == 'java':
+        preproc_config = 'camelsnakecase'
 
     model_path = f'../../../resources/fine_tuning/models/codebert/{eval_measure_opt}/{lang}/{corpus_name}' \
                  f'/best_model/codebert.bin'
@@ -52,8 +56,6 @@ if __name__ == '__main__':
 
     tokenizer = RobertaTokenizer.from_pretrained('microsoft/codebert-base', do_lower_case=False)
 
-    # Build model
-
     config = RobertaConfig.from_pretrained('microsoft/codebert-base')
 
     print('\n', config)
@@ -71,9 +73,9 @@ if __name__ == '__main__':
 
     model.to(device)
 
-    print('\nDevice:', device)
+    print(f'\nCorpus: {corpus_name} - {preproc_config} - {eval_measure_opt}')
 
-    print('\nCorpus:', corpus_name)
+    print('\nDevice:', device)
 
     print('\n  Test set:', len(test_codes))
     print('    Code:', test_codes[0], '\n')
@@ -84,7 +86,7 @@ if __name__ == '__main__':
 
     generated_descriptions = []
 
-    with tqdm(total=total_examples, file=sys.stdout, desc='  Generating summaries') as pbar:
+    with tqdm(total=total_examples, file=sys.stdout, colour='green', desc='  Generating summaries') as pbar:
 
         for code in test_codes:
 

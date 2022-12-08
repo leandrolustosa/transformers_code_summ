@@ -10,14 +10,14 @@ from src.evaluation.bleu import compute_maps, bleu_from_maps
 
 if __name__ == '__main__':
 
-    lang = 'java'
-    # lang = 'python'
+    # lang = 'java'
+    lang = 'python'
 
-    corpus_name = 'huetal'
+    # corpus_name = 'huetal'
     # corpus_name = 'codexglue'
-    # corpus_name = 'wanetal'
+    corpus_name = 'wanetal'
 
-    preproc_config_name = 'none'
+    preproc_config = 'none'
 
     kind = 'related_works'
     # kind = 'fine_tuning'
@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     max_desc_len = 20
 
-    test_file_path = f'../../resources/corpora/{lang}/{corpus_name}/csv/test_{kind}_{preproc_config_name}.csv'
+    test_file_path = f'../../resources/corpora/{lang}/{corpus_name}/csv/test_{preproc_config}.csv'
 
     _, _, test_data = utils.read_corpus_csv(test_file_path=test_file_path, sample_size=size_threshold)
 
@@ -37,17 +37,17 @@ if __name__ == '__main__':
 
     test_descs = test_data[1]
 
-    print('\nCorpus:', corpus_name)
+    print(f'\nCorpus: {corpus_name} - {lang}')
 
-    print('\n  Test set:', len(test_descs))
+    print(f'\n  Test set: {len(test_descs)}')
 
     dict_sys_descs = utils.read_descriptions(systems_dir)
 
     all_results = {}
 
-    for cont, (sys_name, sys_descs) in enumerate(dict_sys_descs.items()):
+    for cont, (sys_name, sys_descs) in enumerate(dict_sys_descs.items(), start=1):
 
-        print('\nSystem {} / {}: {} - {}'.format(cont + 1, len(dict_sys_descs), sys_name, len(sys_descs)))
+        print(f'\nSystem {cont} / {len(dict_sys_descs)}: {sys_name} - {len(sys_descs)}')
 
         assert len(test_descs) == len(sys_descs)
 
@@ -55,7 +55,7 @@ if __name__ == '__main__':
 
         print()
 
-        with tqdm(total=len(test_descs), file=sys.stdout, desc='  Evaluating ') as pbar:
+        with tqdm(total=len(test_descs), file=sys.stdout, colour='blue', desc='  Evaluating ') as pbar:
 
             for sys_desc, ref_sys in zip(sys_descs, test_descs):
 
@@ -116,7 +116,7 @@ if __name__ == '__main__':
             report += ';' + str(np.mean(values)).replace('.', ',') + ';' + \
                       str(np.std(values)).replace('.', ',')
 
-    report_file = os.path.join(results_dir, corpus_name + '_results_report.csv')
+    report_file = os.path.join(results_dir, f'{corpus_name}_results_report.csv')
 
     with open(report_file, 'w') as file:
         file.write(report)
