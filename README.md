@@ -2,13 +2,13 @@
 
 ## Dados Gerais
 
-Repositório para disponibilização do código-fonte do programa que foi desenvolvido para executar as tarefas de pré-processamento tanto nos códigos-fonte da linguagem Java como na de Python, bem como nas sumarizações de referência desses mesmos códigos-fonte, divisão dos *Corpora* em *Corpus* de Treinamento, Teste e Validação, além das tarefas relacionadas a execução dos modelos, captura de estatísticas e medidas das execuções de cada modelo, tanto na comparação entre os modelos pré-treinados, como na fase utilizando os modelos após um treinamento de ajuste fino (*fine tuning*) e scripts Python, para auxiliar na geração de relatórios e compilação de dados.
+Repositório para disponibilização do código-fonte do programa que foi desenvolvido para executar as tarefas da Investigação de Modelos Neurais Baseados na Arquitetura *Transformer* para Sumarização Automática de Código-Fonte.
 
 Este protótipo foi construido para ser utilizado como apoio na execução dos experimentos necessários para a dissertação apresentada ao [Programa de Pós-Graduação em Computação Aplicada do Instituto Federal do Espírito Santo (IFES)](https://www.ifes.edu.br/cursos/pos-graduacao/mestrado-em-computacao-aplicada), como requisito parcial para obtenção do título de Mestre em Computação Aplicada.
 
-Aluno: [Leandro Baêta Lustosa Pontes](http://lattes.cnpq.br/2529360031927429)
-Orientador: [Prof. Dr. Hilário Tomaz Alves de Oliveira](http://lattes.cnpq.br/8980213630090119)
-Repositório do artigo publicado: "[Avaliação de Modelos Neurais para Sumarização de Código-Fonte](https://github.com/laicsiifes/code_summarization)"
+Aluno: [Leandro Baêta Lustosa Pontes](http://lattes.cnpq.br/2529360031927429)  
+Orientador: [Prof. Dr. Hilário Tomaz Alves de Oliveira](http://lattes.cnpq.br/8980213630090119)  
+Repositório do artigo publicado: "[Avaliação de Modelos Neurais para Sumarização de Código-Fonte](https://github.com/laicsiifes/code_summarization)"  
 
 > Leia a [dissertação](https://repositorio.ifes.edu.br/handle/123456789/2993) disponibilizada no repositório do IFES, para entender o contexto em que o programa foi utilizado.
 > Código testado no Linux com [Python 3.10.4](https://www.python.org/downloads/release/python-3104/) (Release Date: Apr 2, 2022).
