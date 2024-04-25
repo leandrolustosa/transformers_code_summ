@@ -10,10 +10,10 @@ Aluno: [Leandro Baêta Lustosa Pontes](http://lattes.cnpq.br/2529360031927429)
 Orientador: [Prof. Dr. Hilário Tomaz Alves de Oliveira](http://lattes.cnpq.br/8980213630090119)  
 Repositório do artigo publicado: "[Avaliação de Modelos Neurais para Sumarização de Código-Fonte](https://github.com/laicsiifes/code_summarization)"  
 
-> Leia a [dissertação](https://repositorio.ifes.edu.br/handle/123456789/2993) disponibilizada no repositório do IFES, para entender o contexto em que o programa foi utilizado.
-> Código testado no Linux com [Python 3.10.4](https://www.python.org/downloads/release/python-3104/) (Release Date: Apr 2, 2022).
-> Código testado no Windows com [Python 3.10.5](https://www.python.org/downloads/release/python-3105/) (Release Date: June 6, 2022).
-> Consulte os '[requirements](https://github.com/leandrolustosa/transformers_code_summ/blob/main/requirements.txt)' para saber as versões de todas as bibliotecas usadas.
+> Leia a [dissertação](https://repositorio.ifes.edu.br/handle/123456789/2993) disponibilizada no repositório do IFES, para entender o contexto em que o programa foi utilizado.  
+> Código testado no Linux com [Python 3.10.4](https://www.python.org/downloads/release/python-3104/) (Release Date: Apr 2, 2022).  
+> Código testado no Windows com [Python 3.10.5](https://www.python.org/downloads/release/python-3105/) (Release Date: June 6, 2022).  
+> Consulte os '[requirements](https://github.com/leandrolustosa/transformers_code_summ/blob/main/requirements.txt)' para saber as versões de todas as bibliotecas usadas.  
 
 ## Organização do código-fonte
 
